@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airport Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;
+  --bg:#0a101b;--side:#0b1220;--card:#101a2b;--card2:#0d1523;--line:#1c2a40;--line2:#2a3b55;
+  --ink:#e7edf6;--mut:#8b98ad;--mut2:#66748c;
+  --blue:#58b4ff;--blue-d:#12304c;--green:#2fd6a1;--green-d:#0f3b30;--amber:#f2b441;--amber-d:#3a2d12;--red:#f26d6d;--red-d:#3a1a20;
+  --mono:'JetBrains Mono','IBM Plex Sans Thai',ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+input,select{font:inherit;color:var(--ink);padding:9px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--card2);min-width:0}
+input::placeholder{color:var(--mut2)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.hide{display:none!important}
+.mono{font-family:var(--mono)}
+.btn{background:var(--blue);color:#06121f;border:0;border-radius:6px;padding:10px 16px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{filter:brightness(1.08)}
+.btn svg{width:16px;height:16px;flex:none}
+.btn.sm{padding:5px 11px;font-size:13px}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line2);font-weight:500}
+.btn.ghost:hover{background:#15223a}
+.btn.del{background:none;color:var(--red);border:1px solid var(--line2);padding:5px 11px;font-size:13px;font-weight:500}
+.btn.del:hover{background:var(--red-d)}
+.muted{color:var(--mut)}
+.err{color:var(--red);font-size:14px;min-height:20px;margin-top:8px}
+
+/* ---------- layout ---------- */
+#app{display:flex;min-height:100vh}
+#side{width:236px;flex:none;background:var(--side);border-right:1px solid var(--line);box-shadow:inset 3px 0 0 var(--blue);display:flex;flex-direction:column;height:100vh;position:sticky;top:0}
+.brand{padding:20px 16px 6px;text-align:center}
+.brand svg{width:96px;height:auto}
+.brand b{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.16em;line-height:1.5;margin-top:6px}
+.menu-h{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2);margin:16px 20px 6px}
+#nav{flex:1;overflow-y:auto;padding:4px 10px;scrollbar-color:var(--line2) transparent}
+#nav button{display:block;width:100%;text-align:left;background:none;border:0;border-left:2px solid transparent;font-size:14px;padding:8px 12px;cursor:pointer;color:var(--mut);border-radius:0 6px 6px 0}
+#nav button:hover{background:#111b2d;color:var(--ink)}
+#nav button.on{border-left-color:var(--blue);background:#12223a;color:var(--ink);font-weight:600}
+.me{display:flex;align-items:center;gap:10px;padding:14px;border-top:1px solid var(--line)}
+.av{width:38px;height:38px;border-radius:50%;background:#16263f;color:var(--blue);display:grid;place-items:center;font-weight:600;flex:none}
+.me b{font-size:14px;display:block;line-height:1.2}
+.me small{display:block;font-size:11px;color:var(--mut)}
+.me .btn{margin-left:auto}
+
+.col{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:60px;flex:none;display:flex;align-items:center;gap:18px;padding:0 32px;border-bottom:1px solid var(--line)}
+.crumb{flex:1;min-width:0;color:var(--mut);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb span{margin:0 10px;color:var(--mut2)}
+.crumb b{color:var(--ink);font-weight:400}
+.live{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.04em;background:var(--green-d);color:var(--green);padding:7px 12px;border-radius:5px;white-space:nowrap}
+.clk{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.bell{display:flex;align-items:center;gap:14px;background:none;border:0;cursor:pointer;color:var(--mut);padding:4px}
+.bell:hover{color:var(--ink)}
+.bell svg{width:20px;height:20px}
+.bn{background:var(--red-d);color:var(--red);font-family:var(--mono);font-size:12px;font-weight:600;border-radius:5px;padding:6px 9px;min-width:28px;text-align:center}
+main{flex:1;min-width:0;padding:30px 32px 24px}
+.pghead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.pt{font-size:34px;font-weight:500;margin:0 0 8px;letter-spacing:-.01em}
+.pt.s{font-size:28px}
+.sub{color:var(--mut);font-size:14px;margin:0}
+.pgact{display:flex;gap:10px;flex-wrap:wrap}
+h2{font-size:20px;margin:0 0 16px}
+.pgact{align-items:flex-end}.pgact label{min-width:190px}
+
+/* ---------- home ---------- */
+.home{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-h b{font-size:17px;font-weight:600}
+.lnk{background:none;border:0;color:var(--blue);cursor:pointer;font-size:13px}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mut);margin-bottom:12px}
+.chk input{padding:0;accent-color:var(--blue)}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.dow{padding:7px 8px;font-family:var(--mono);font-size:12px;color:var(--mut);border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--card2)}
+.day{min-height:104px;padding:4px 6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-size:12px;cursor:pointer;overflow:hidden}
+.day:hover{background:#13213a}
+.day.out{background:#0b121e;cursor:default}
+.day .n{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:50%;color:var(--mut);font-family:var(--mono);font-size:12px}
+.day.today .n{background:var(--blue);color:#06121f;font-weight:600}
+.chip{display:flex;gap:5px;margin-top:4px;line-height:1.25;color:var(--ink)}
+.chip i{width:9px;height:9px;border-radius:50%;flex:none;margin-top:3px}
+.tm{color:var(--amber);font-family:var(--mono);font-size:11px}
+.more{margin-top:4px;color:var(--blue)}
+.alerts{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ah{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.ah b{font-size:15px}
+.open{background:var(--red-d);color:var(--red);font-family:var(--mono);font-weight:600;border-radius:4px;font-size:12px;padding:4px 9px}
+.al{padding:12px 16px;border-bottom:1px solid var(--line)}
+.al:last-child{border-bottom:0}
+.at{display:flex;gap:8px;align-items:center}
+.at b{font-size:14px;flex:1;font-weight:500}
+.at time{font-family:var(--mono);font-size:11px;color:var(--mut2)}
+.al p{margin:6px 0 4px;font-size:13px;color:var(--mut)}
+.al a{font-size:13px;color:var(--blue);cursor:pointer}
+.alerts .none{padding:24px 16px;color:var(--mut);font-size:14px}
+
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:10px;padding:22px;max-width:560px;width:92vw}
+dialog::backdrop{background:rgba(3,6,12,.7)}
+dialog h3{margin:0 0 14px;font-size:18px}
+dialog .btn{margin-top:6px}
+.shift{border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:6px;padding:10px 12px;margin-bottom:10px;background:var(--card2)}
+.shift table{margin-top:6px}
+
+/* ---------- data pages ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:20px}
+form.f{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;align-items:end}
+label{font-size:13px;display:flex;flex-direction:column;gap:5px;color:var(--mut)}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--card2);color:var(--mut);font-size:12px;font-weight:600;letter-spacing:.04em}
+tbody tr:hover td{background:#121e33}
+tbody tr:last-child td{border-bottom:0}
+.empty{padding:24px;text-align:center;color:var(--mut)}
+.acts{display:flex;gap:6px}
+.fbar{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.fbar label{min-width:220px}
+.fcnt{margin-left:auto;display:flex;align-items:baseline;gap:10px;color:var(--mut);font-size:14px}
+.fcnt b{font-family:var(--mono);font-size:30px;font-weight:500;color:var(--ink)}
+.fcnt small{font-size:12px;color:var(--mut2)}
+#login{max-width:380px;margin:12vh auto;padding:0 20px}
+#login .kick{font-family:var(--mono);font-size:12px;letter-spacing:.16em;color:var(--blue);margin-bottom:10px}
+#login form{display:grid;gap:14px}
+
+/* ---------- P6 report ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.kpi .l{color:var(--mut);font-size:14px}
+.kpi .v{font-family:var(--mono);font-size:36px;font-weight:500;margin:10px 0 8px;letter-spacing:-.02em;line-height:1.1}
+.kpi .s{font-size:13px;color:var(--mut)}
+.kpi .s.am{color:var(--amber)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:22px}
+.panel.flush{padding:0;overflow:hidden}
+.panel.flush .ph{padding:20px 20px 16px;margin:0}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.ph h3{margin:0;font-size:18px;font-weight:600}
+.ph p{margin:4px 0 0;color:var(--mut);font-size:13px}
+.seg{display:flex;gap:8px}
+.seg button{background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer}
+.seg button:hover{border-color:var(--line2)}
+.seg button.on{border-color:var(--blue);color:var(--blue)}
+.tr3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.fl{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:18px}
+.fl-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.fl-no{font-family:var(--mono);font-size:22px;font-weight:600}
+.fl-no small{font-size:12px;color:var(--mut);font-weight:400;margin-left:8px;vertical-align:top}
+.tag{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;padding:5px 10px;border-radius:4px;white-space:nowrap}
+.ok{background:var(--green-d);color:var(--green)}
+.warn{background:var(--amber-d);color:var(--amber)}
+.bad{background:var(--red-d);color:var(--red)}
+.info{background:var(--blue-d);color:var(--blue)}
+.mute{background:#1a2538;color:var(--mut)}
+.fl-m{display:flex;justify-content:space-between;gap:8px;color:var(--mut);font-size:13px;margin:12px 0 10px}
+.fl-m b{font-family:var(--mono);color:var(--ink);font-weight:600}
+.bar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.bar i{flex:1;height:4px;background:#1c2940;border-radius:2px;overflow:hidden}
+.bar s{display:block;height:100%;border-radius:2px;text-decoration:none}
+.bar span{font-family:var(--mono);font-size:12px;color:var(--mut);min-width:34px;text-align:right}
+.tk{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px}
+.tk svg{width:16px;height:16px;flex:none}
+.tk .nm{flex:1}
+.tk .st{font-family:var(--mono);font-size:12px;color:var(--mut);white-space:nowrap}
+.tk .st b{font-weight:500;margin-left:12px}
+.rd{color:var(--red)}.am{color:var(--amber)}
+.fl-f{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);margin-top:8px;padding-top:12px;font-size:12px;color:var(--mut)}
+.fl-f a{color:var(--blue);cursor:pointer}
+.two{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:22px;align-items:start}
+.pill{display:inline-block;font-size:13px;font-weight:500;padding:4px 10px;border-radius:4px}
+.pf{padding:14px 20px;color:var(--mut2);font-size:12px;border-top:1px solid var(--line)}
+.xbad{display:flex;gap:12px;align-items:flex-start;background:#2a1419;border:1px solid #4a2229;border-radius:6px;padding:14px 16px;margin-bottom:12px}
+.xbad svg{width:22px;height:22px;flex:none;margin-top:2px}
+.xbad.good{background:var(--green-d);border-color:#17594a}
+.xbad b{display:block;font-size:15px;font-weight:600}
+.xbad small{color:var(--mut);font-size:12px}
+.xrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:16px}
+.xrow b{display:block;font-size:15px;font-weight:600}
+.xrow small{color:var(--mut);font-size:13px}
+.xnote{margin:16px 0 0;color:var(--amber);font-size:13px}
+.xcnt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-top:1px solid var(--line);padding-top:14px;margin-top:18px}
+.xcnt small{display:block;color:var(--mut);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xcnt b{font-family:var(--mono);color:var(--green);font-size:14px;font-weight:500}
+.xcnt div:last-child{text-align:right}
+.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--mut2);font-size:12px;margin-top:6px}
+
+@media(max-width:1100px){.two{grid-template-columns:1fr}}
+@media(max-width:1000px){.home{grid-template-columns:1fr}}
+@media(max-width:800px){
+  #app{flex-direction:column}
+  #side{width:auto;height:auto;position:static;border-right:0;border-bottom:1px solid var(--line);box-shadow:inset 0 3px 0 var(--blue)}
+  #nav{display:flex;overflow-x:auto;flex:none}
+  #nav button{white-space:nowrap;width:auto;border-left:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0}
+  #nav button.on{border-bottom-color:var(--blue)}
+  .brand svg{width:64px}.menu-h{display:none}
+  .top{height:auto;min-height:52px;flex-wrap:wrap;padding:8px 16px;gap:10px}
+  .clk.d{display:none}
+  main{padding:18px 16px}.day{min-height:70px}
+  .pt{font-size:26px}
+}
+</style>
+</head>
+<body>
+<section id="login">
+  <div class="card">
+    <div class="kick">AIRPORT OPERATIONS</div>
+    <h2>เข้าสู่ระบบ</h2>
+    <form id="lf">
+      <label>Username<input name="username" required autofocus></label>
+      <label>Password<input name="password" type="password" required></label>
+      <button class="btn" style="justify-content:center">เข้าสู่ระบบ</button>
+    </form>
+    <div class="err" id="lerr"></div>
+  </div>
+</section>
+
+<div id="app" class="hide">
+  <div id="side">
+    <div class="brand">
+      <svg viewBox="0 0 120 50" aria-hidden="true"><path d="M6 38 L60 34 L98 22 Q112 18 114 24 Q112 30 98 32 L70 40 Z" fill="#e7edf6" stroke="#0b1220" stroke-width="2" stroke-linejoin="round"/><path d="M12 12 L24 12 L44 33 L30 34 Z" fill="#58b4ff" stroke="#0b1220" stroke-width="2" stroke-linejoin="round"/><path d="M58 33 L84 18 L92 20 L74 38 Z" fill="#58b4ff" stroke="#0b1220" stroke-width="2" stroke-linejoin="round"/></svg>
+      <b>AIRPORT<br>OPERATIONS</b>
+    </div>
+    <div class="menu-h">menu</div>
+    <div id="nav"></div>
+    <div class="me"><div class="av" id="av"></div><div><b id="mn"></b><small id="mp"></small></div><button class="btn ghost sm" id="out">ออก</button></div>
+  </div>
+  <div class="col">
+    <header class="top">
+      <div class="crumb" id="crumb"></div>
+      <span class="live">SYSTEM LIVE</span>
+      <span class="clk d" id="tdate"></span>
+      <span class="clk" id="ttime"></span>
+      <button class="bell" id="bell" title="การแจ้งเตือน" aria-label="การแจ้งเตือน">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+        <span class="bn hide" id="bn">0</span>
+      </button>
+    </header>
+    <main id="main"></main>
+  </div>
+</div>
+
+<dialog id="dlg"><div id="dlgb"></div><button class="btn" id="dlgx">ปิด</button></dialog>
+
+<script>
+const ROLE = { admin: 'ผู้ดูแลระบบ', manager: 'ผู้จัดการสนามบิน', user: 'เจ้าหน้าที่' };
+const MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+let tok = sessionStorage.getItem('tok'), M, TABS = {}, CUR, timer, RD = null;
+const RS = { risk: false, type: '', date: '' }; // type: '' = รายงานภาพรวม (ค่าเริ่มต้น), ops = 6.1, res = 6.2
+let FLASH = ''; // ข้อความสำเร็จหลังเบิกอุปกรณ์
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const hm = t => String(t || '').slice(0, 5);
+const pad = n => String(n).padStart(2, '0');
+const tzo = -new Date().getTimezoneOffset() / 60, TZ = 'UTC' + (tzo >= 0 ? '+' : '-') + Math.abs(tzo);
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const toD = s => new Date(String(s).replace(' ', 'T'));
+const fmtDT = s => { if (!s) return '—'; const t = String(s); return t.slice(0, 10) === todayStr() ? t.slice(11, 16) : t.slice(8, 10) + '/' + t.slice(5, 7) + ' ' + t.slice(11, 16); };
+
+function tick() {
+  const d = new Date();
+  $('#tdate').textContent = `${pad(d.getDate())} ${MON[d.getMonth()].slice(0, 3).toUpperCase()} ${d.getFullYear()}`;
+  $('#ttime').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${TZ}`;
+}
+tick(); setInterval(tick, 1000);
+
+async function api(path, o = {}) {
+  const r = await fetch('/api/' + path, { method: o.method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: o.body && JSON.stringify(o.body) });
+  const d = await r.json();
+  if (!r.ok) { if (r.status === 401 && path !== 'login') logout(); throw new Error(d.error); }
+  return d;
+}
+function logout() { sessionStorage.removeItem('tok'); location.reload(); }
+
+$('#lf').onsubmit = async e => {
+  e.preventDefault();
+  try {
+    const d = await api('login', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
+    tok = d.token; sessionStorage.setItem('tok', tok); start();
+  } catch (x) { $('#lerr').textContent = x.message; }
+};
+$('#out').onclick = logout;
+$('#dlgx').onclick = () => $('#dlg').close();
+$('#bell').onclick = () => show('home');
+
+async function bell() {
+  try { const a = await api('alerts'); $('#bn').textContent = a.length; $('#bn').classList.toggle('hide', !a.length); } catch {}
+}
+
+async function start() {
+  try { M = await api('meta'); } catch { return; }
+  const u = M.user;
+  $('#login').classList.add('hide'); $('#app').classList.remove('hide');
+  $('#av').textContent = (u.fullname || u.username)[0].toUpperCase();
+  $('#mn').textContent = u.fullname || u.username;
+  $('#mp').textContent = u.position || ROLE[u.role];
+  const tabs = [['home', 'Home'], ...(M.pages.includes('P6') ? [['report', 'รายงาน (P6)']] : []), ...Object.entries(M.tables).map(([k, v]) => [k, v.l])];
+  TABS = Object.fromEntries(tabs);
+  $('#nav').innerHTML = tabs.map(([k, l]) => `<button data-t="${k}">${esc(l)}</button>`).join('');
+  $('#nav').onclick = e => e.target.dataset.t && show(e.target.dataset.t);
+  show('home');
+}
+
+async function show(t) {
+  CUR = t; clearInterval(timer); $('#main').onclick = null;
+  if (t === 'report') { RS.type = ''; RS.date = ''; } // เข้าหน้ารายงานใหม่ = หน้าภาพรวมก่อนเสมอ
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  $('#crumb').innerHTML = `Operations center <span>/</span> <b>${esc(TABS[t] || t)}</b>`;
+  $('#main').innerHTML = '<div class="empty">กำลังโหลด…</div>';
+  bell();
+  try { await (t === 'home' ? home() : t === 'report' ? report() : grid(t)); }
+  catch (x) { $('#main').innerHTML = `<div class="err">${esc(x.message)}</div>`; }
+}
+
+/* ---------- Home: ปฏิทินกะ + แจ้งเตือน (ทุกบทบาทเข้าได้) ---------- */
+const HS = { y: new Date().getFullYear(), m: new Date().getMonth(), mine: null };
+const SEV = { critical: ['▲', '#f26d6d'], warning: ['▲', '#f2b441'], info: ['●', '#58b4ff'] };
+const shiftColor = s => { const h = +String(s.start_time).slice(0, 2); return h < 12 ? '#f2b441' : h < 18 ? '#f26d6d' : '#58b4ff'; };
+
+async function home() {
+  if (HS.mine === null) HS.mine = M.user.role === 'user';
+  const ym = `${HS.y}-${String(HS.m + 1).padStart(2, '0')}`;
+  const [rows, al] = await Promise.all([api('calendar?month=' + ym), api('alerts')]);
+  const sh = {};
+  rows.forEach(r => { const s = sh[r.shift_id] ||= { ...r, staff: [] }; if (r.users_id) s.staff.push(r); });
+  let list = Object.values(sh);
+  if (HS.mine) list = list.filter(s => s.staff.some(p => p.users_id === M.user.id));
+  const byDay = {}; list.forEach(s => (byDay[s.workday] ||= []).push(s));
+
+  const off = (new Date(HS.y, HS.m, 1).getDay() + 6) % 7, nd = new Date(HS.y, HS.m + 1, 0).getDate(), now = new Date();
+  let cells = '';
+  for (let i = 0; i < Math.ceil((off + nd) / 7) * 7; i++) {
+    const d = i - off + 1;
+    if (d < 1 || d > nd) { cells += '<div class="day out"></div>'; continue; }
+    const key = `${ym}-${String(d).padStart(2, '0')}`, ev = byDay[key] || [];
+    const today = d === now.getDate() && HS.m === now.getMonth() && HS.y === now.getFullYear();
+    cells += `<div class="day${today ? ' today' : ''}" data-d="${key}"><span class="n">${d}</span>
+      ${ev.slice(0, 3).map(s => `<div class="chip"><i style="background:${shiftColor(s)}"></i><div><span class="tm">${hm(s.start_time)}–${hm(s.end_time)}</span> ${esc(s.worktitle)}</div></div>`).join('')}
+      ${ev.length > 3 ? `<div class="more">+${ev.length - 3} กะ</div>` : ''}</div>`;
+  }
+
+  $('#main').innerHTML = `<div class="pghead"><div><h1 class="pt">Home</h1><p class="sub">ปฏิทินกะปฏิบัติงานและการแจ้งเตือนเชิงปฏิบัติการ</p></div></div><div class="home">
+    <section class="cal">
+      <div class="cal-h"><button class="lnk" id="pv">◄ ${MON[(HS.m + 11) % 12]}</button><b>${MON[HS.m]} ${HS.y}</b><button class="lnk" id="nx">${MON[(HS.m + 1) % 12]} ►</button></div>
+      <label class="chk" style="flex-direction:row"><input type="checkbox" id="mine" ${HS.mine ? 'checked' : ''}> แสดงเฉพาะกะของฉัน</label>
+      <div class="cal-g">${DOW.map(d => `<div class="dow">${d}</div>`).join('')}${cells}</div>
+    </section>
+    <div class="alerts"><div class="ah"><b>Operational alerts</b><span class="open">${al.length} OPEN</span></div>
+      ${al.length ? al.map(a => `<div class="al"><div class="at"><span style="color:${SEV[a.sev][1]}">${SEV[a.sev][0]}</span><b>${esc(a.title)}</b><time>${a.time ? esc(String(a.time).slice(5, 16)) : ''}</time></div>
+        ${a.detail ? `<p>${esc(a.detail)}</p>` : ''}${M.tables[a.tab] ? `<a data-t="${a.tab}">ดูข้อมูลที่เกี่ยวข้อง</a>` : ''}</div>`).join('') : '<div class="none">ไม่มีการแจ้งเตือนในขณะนี้</div>'}
+    </div></div>`;
+
+  const go = d => { HS.m += d; if (HS.m < 0) { HS.m = 11; HS.y--; } if (HS.m > 11) { HS.m = 0; HS.y++; } show('home'); };
+  $('#pv').onclick = () => go(-1); $('#nx').onclick = () => go(1);
+  $('#mine').onchange = e => { HS.mine = e.target.checked; show('home'); };
+  $('.cal-g').onclick = e => { const c = e.target.closest('.day[data-d]'); if (c) dayDetail(c.dataset.d, byDay[c.dataset.d] || []); };
+  $('.alerts').onclick = e => e.target.dataset.t && show(e.target.dataset.t);
+}
+
+function dayDetail(key, ev) {
+  const dt = new Date(key + 'T00:00:00');
+  $('#dlgb').innerHTML = `<h3>${dt.toLocaleDateString('th-TH', { dateStyle: 'full' })}</h3>` + (ev.length
+    ? ev.map(s => `<div class="shift"><b>${hm(s.start_time)}–${hm(s.end_time)} · ${esc(s.worktitle)}</b>
+        ${s.staff.length ? `<table>${s.staff.map(p => `<tr><td>${esc(p.fullname)}</td><td>${esc(p.position)}</td><td>${esc(p.department)}</td></tr>`).join('')}</table>` : '<p class="muted">ยังไม่มีผู้รับผิดชอบกะนี้</p>'}</div>`).join('')
+    : '<p class="muted">ไม่มีกะในวันนี้</p>');
+  $('#dlg').showModal();
+}
+
+/* ---------- ตารางข้อมูล (เพิ่ม/ลบ ตามสิทธิ์, แก้ไขเฉพาะ admin) ---------- */
+async function fkOptions(d) {
+  const o = {};
+  await Promise.all(d.c.filter(c => c[1] === 'fk' || c[1] === 'tgate').map(async c => { o[c[0]] = await api('opts/' + c[3]); }));
+  if (d.borrow) o.equipment_id = await api('opts/ground_equipment');
+  if (d.c.some(c => c[1] === 'tgate')) o._terminal = await api('opts/terminal');
+  return o;
+}
+
+async function grid(t) {
+  const d = M.tables[t], can = d.can, isAdmin = M.user.role === 'admin' || !!d.ed; // แก้ไขได้: admin หรือตารางที่เปิดแก้ไข (เที่ยวบิน/หลุมจอด/ประตู)
+  const cols = d.tc || (d.auto ? [[d.pk, 'ro', 'รหัส']] : []).concat(d.c.filter(c => c[1] !== 'password' && c[4] !== 'hide'));
+  const [rows, opts, avail] = await Promise.all([api('t/' + t), fkOptions(d), d.borrow ? api('borrow/avail') : null]);
+  const byId = {}; rows.forEach(r => byId[r[d.pk]] = r);
+  let editId = null;
+  const input = ([k, ty, l, x, rq]) => {
+    if (ty === 'ro') return '';
+    if (ty === 'tgate') return `<label>อาคารผู้โดยสาร<select id="tsel"><option value="">-</option>${opts._terminal.map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('')}</select></label>
+      <label>${l}<select name="${k}" id="gsel" disabled><option value="">- เลือกอาคารก่อน -</option></select></label>`;
+    if (ty === 'enum' || ty === 'fk') {
+      const o = ty === 'enum' ? x.map(v => [v, v]) : opts[k];
+      return `<label>${l}<select name="${k}" ${rq === 1 ? 'required' : ''}><option value="">-</option>${o.map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('')}</select></label>`;
+    }
+    const type = { text: 'text', number: 'number', date: 'date', time: 'time', datetime: 'datetime-local', email: 'email', password: 'password' }[ty];
+    return `<label>${l}<input name="${k}" type="${type}" ${ty === 'password' || (k === d.pk && !d.auto) ? 'required' : ''}></label>`;
+  };
+  const tableHtml = list => list.length ? `<table><thead><tr>${cols.map(c => `<th>${c[2]}</th>`).join('')}${can ? '<th></th>' : ''}</tr></thead><tbody>
+      ${list.map(r => `<tr>${cols.map(c => `<td>${esc(r[c[0]])}</td>`).join('')}${can ? `<td><div class="acts">${isAdmin ? `<button class="btn ghost sm" data-edit="${esc(r[d.pk])}">แก้ไข</button>` : ''}<button class="btn del" data-id="${esc(r[d.pk])}">ลบ</button></div></td>` : ''}</tr>`).join('')}
+      </tbody></table>` : '<div class="empty">ยังไม่มีข้อมูล</div>';
+  const stOpts = (d.c.find(c => c[0] === 'status') || [])[3] || [];
+  const lab = k => (d.c.find(c => c[0] === k) || [])[2] || k;
+  const sVals = k => opts[k] ? opts[k].map(o => o[0]) : (d.c.find(c => c[0] === k && c[1] === 'enum') || [])[3] || [...new Set(rows.map(r => r[k]).filter(v => v != null && v !== ''))];
+  const SR = (d.search || []).map(x => typeof x === 'string' ? [x, lab(x)] : x), cn = d.cnt || ['พบ', 'รายการ'];
+  const searchHtml = SR.length ? `<div class="card"><div class="fbar">${SR.map(([k, l, ty]) => `<label>ค้นหา${l}<input id="s_${k}" ${ty === 'date' || ty === 'time' ? `type="${ty}"` : `list="dl_${k}" placeholder="พิมพ์หรือเลือก" autocomplete="off"`}>${ty === 'date' || ty === 'time' ? '' : `<datalist id="dl_${k}">${sVals(k).map(v => `<option value="${esc(v)}"></option>`).join('')}</datalist>`}</label>`).join('')}
+      <div class="fcnt"><span>${cn[0]}</span><b id="sc">${rows.length}</b><span>${cn[1]}</span></div></div></div>` : '';
+  const opt = a => (a || []).map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('');
+  const borrowForm = d.borrow ? `<div class="card"><form class="f" id="bf">
+      <label>รหัสการเบิกอุปกรณ์<input name="borrow_id" type="number" placeholder="เว้นว่าง = ระบบกำหนด"></label>
+      <label>รหัสอุปกรณ์<select name="equipment_id" required><option value="">-</option>${opt(opts.equipment_id)}</select><small id="bav" class="muted"></small></label>
+      <label>ผู้เบิก<select name="users_id" required><option value="">-</option>${opt(opts.users_id)}</select></label>
+      <label>แผนก<select name="department_id" required><option value="">-</option>${opt(opts.department_id)}</select></label>
+      <label>จำนวน<input name="qty" type="number" min="1" step="1" value="1" required></label>
+      <label>วันเดือนปีที่เบิก<input name="borrow_date" type="date" value="${todayStr()}" required></label>
+      <div class="acts"><button class="btn">เบิกอุปกรณ์</button></div></form><div class="err" id="berr"></div></div>` : '';
+  const filterHtml = d.view ? `<div class="card"><div class="fbar">
+      <label>เลือกตามอุปกรณ์<select id="fe"><option value="">ทั้งหมด</option>${(opts.equipment_id || []).map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('')}</select></label>
+      <label>ประเภทการดู (สถานะ)<select id="fs"><option value="">ทั้งหมด</option>${stOpts.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select></label>
+      <div class="fcnt"><span>จำนวนอุปกรณ์ที่แสดง</span><b id="fc">${rows.length}</b><span>ชิ้น</span><small id="fct">ทั้งหมดในสนามบิน</small></div></div></div>` : '';
+  $('#main').innerHTML = `<div class="pghead"><div><h1 class="pt s">${esc(d.l)}</h1>${can ? '' : '<p class="sub">บัญชีนี้ดูข้อมูลได้อย่างเดียว</p>'}</div></div>
+    ${can && d.borrow ? borrowForm : ''}
+    ${can ? `<div class="card${d.borrow ? ' hide' : ''}" id="fcard"><form class="f" id="f">${d.c.map(input).join('')}
+        <div class="acts"><button class="btn" id="sub">เพิ่มข้อมูล</button><button type="button" class="btn ghost hide" id="cancel">ยกเลิก</button></div></form><div class="err" id="ferr"></div></div>` : ''}
+    ${filterHtml}${searchHtml}
+    <div class="card wrap" style="padding:0" id="tbl">${tableHtml(rows)}</div>`;
+
+  if (can) {
+    const f = $('#f');
+    const gk = (d.c.find(c => c[1] === 'tgate') || [])[0];
+    const fillGates = (tid, sel) => { // เลือก terminal ก่อน แล้วแสดงเฉพาะ gate ใน terminal นั้น
+      const g = $('#gsel'), list = tid === '' ? [] : (opts[gk] || []).filter(o => String(o[2]) === String(tid));
+      g.innerHTML = (tid === '' ? '<option value="">- เลือกอาคารก่อน -</option>' : '<option value="">-</option>') + list.map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('');
+      g.disabled = tid === ''; if (sel != null) g.value = sel;
+    };
+    if (gk) $('#tsel').onchange = e => fillGates(e.target.value);
+    f.onsubmit = async e => {
+      e.preventDefault();
+      try {
+        const body = Object.fromEntries(new FormData(f));
+        await api(editId === null ? 't/' + t : `t/${t}/${encodeURIComponent(editId)}`, { method: editId === null ? 'POST' : 'PUT', body });
+        show(t);
+      } catch (x) { $('#ferr').textContent = x.message; }
+    };
+    $('#cancel').onclick = () => show(t);
+    window.startEdit = id => { // เฉพาะ admin
+      editId = id; const r = byId[id];
+      d.c.forEach(([k, ty]) => {
+        if (ty === 'tgate') { const g = (opts[k] || []).find(o => String(o[0]) === String(r[k])); const tid = g && g[2] != null ? String(g[2]) : ''; $('#tsel').value = tid; fillGates(tid, r[k] ?? ''); return; }
+        const el = f.elements[k]; if (!el || ty === 'ro') return;
+        let v = ty === 'password' ? '' : r[k] ?? '';
+        if (ty === 'datetime') v = String(v).replace(' ', 'T').slice(0, 16);
+        el.value = v;
+        if (k === d.pk) el.disabled = true;
+        if (ty === 'password') { el.required = false; el.placeholder = 'เว้นว่าง = ไม่เปลี่ยน'; }
+      });
+      $('#fcard').classList.remove('hide'); $('#sub').textContent = 'บันทึกการแก้ไข'; $('#cancel').classList.remove('hide');
+      $('#ferr').textContent = ''; f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+  }
+  if (SR.length) { // ค้นหา (พิมพ์บางส่วนก็ได้) + แสดงจำนวนที่พบ
+    const apply = () => {
+      const q = SR.map(([k, , , f]) => [f || k, $('#s_' + k).value.trim().toLowerCase()]).filter(x => x[1]);
+      const list = rows.filter(r => q.every(([k, v]) => String(r[k] ?? '').toLowerCase().includes(v)));
+      $('#tbl').innerHTML = tableHtml(list); $('#sc').textContent = list.length;
+    };
+    SR.forEach(([k]) => { $('#s_' + k).oninput = apply; });
+  }
+  if (d.borrow && can) { // จัดสรร: แสดงจำนวนที่ว่าง, เบิกตามจำนวน, ไม่พอให้แสดงข้อความ
+    const bf = $('#bf');
+    bf.elements.equipment_id.onchange = e => { const v = e.target.value; $('#bav').textContent = v ? `ว่างอยู่ ${avail[v] || 0} ชิ้น` : ''; };
+    bf.onsubmit = async e => {
+      e.preventDefault(); const el = $('#berr'); el.style.color = ''; el.textContent = '';
+      try {
+        const r = await api('borrow', { method: 'POST', body: Object.fromEntries(new FormData(bf)) });
+        FLASH = `เบิกอุปกรณ์สำเร็จ ${r.units.length} ชิ้น: ${r.units.join(', ')}`; show(t);
+      } catch (x) { el.textContent = x.message; }
+    };
+  }
+  if (d.view) { // ตัวกรอง: อุปกรณ์ + สถานะ -> แสดงจำนวนที่เลือก (ไม่เลือก = ทั้งหมด)
+    const apply = () => {
+      const e = $('#fe').value, s = $('#fs').value;
+      const list = rows.filter(r => (!e || String(r.equipment_id) === e) && (!s || r.status === s));
+      $('#tbl').innerHTML = tableHtml(list);
+      $('#fc').textContent = list.length;
+      $('#fct').textContent = e || s ? `จากทั้งหมด ${rows.length} ชิ้น` : 'ทั้งหมดในสนามบิน';
+    };
+    $('#fe').onchange = apply; $('#fs').onchange = apply;
+  }
+  $('#main').onclick = async e => {
+    if (e.target.dataset.edit !== undefined && isAdmin) return window.startEdit(e.target.dataset.edit);
+    const id = e.target.dataset.id;
+    if (id === undefined || !confirm('ลบรายการนี้?')) return;
+    try { await api(`t/${t}/${encodeURIComponent(id)}`, { method: 'DELETE' }); show(t); } catch (x) { alert(x.message); }
+  };
+  if (FLASH) { const el = $('#berr'); if (el) { el.style.color = 'var(--green)'; el.textContent = FLASH; } FLASH = ''; }
+}
+
+/* ---------- P6 รายงานภาพรวม ---------- */
+const IC = {
+  done: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#2fd6a1" stroke-width="1.3"/><path d="M5 8.2l2 2 4-4.2" fill="none" stroke="#2fd6a1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  prog: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#58b4ff" stroke-width="1.3" stroke-dasharray="2.4 2.2"/></svg>',
+  warn: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#f2b441" stroke-width="1.3" stroke-dasharray="2.4 2.2"/></svg>',
+  bad: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#f26d6d" stroke-width="1.3"/><path d="M8 4.8v3.8M8 10.9v.2" stroke="#f26d6d" stroke-width="1.5" stroke-linecap="round"/></svg>'
+};
+IC.pend = IC.prog;
+const TRUCK = '<svg viewBox="0 0 24 24" fill="none" stroke="#f26d6d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
+
+// ขั้นตอนของแต่ละเที่ยวบิน สร้างจากข้อมูลจริง: ประตู / สัมภาระ / ขึ้นเครื่อง / ออกเดินทาง
+function tasksOf(f) {
+  const st = f.flight_status || 'Scheduled', fin = st === 'Departed' || st === 'Arrived';
+  const delay = f.departure_time && f.estimated_time ? Math.round((toD(f.estimated_time) - toD(f.departure_time)) / 60000) : 0;
+  const T = [];
+  T.push(f.gate_id == null ? { n: 'ประตูขึ้นเครื่อง', s: 'pend', r: 'ยังไม่กำหนด', w: 0 }
+    : f.conflict ? { n: 'ประตูขึ้นเครื่อง', s: 'bad', r: 'Blocked', rc: 'rd', x: 'ใช้ซ้อนกัน', w: 0 }
+    : { n: 'ประตูขึ้นเครื่อง', s: 'done', r: 'Complete', x: 'Gate ' + f.gate_id, w: 1 });
+  T.push(!f.bag_total ? { n: 'สัมภาระ', s: 'pend', r: 'ไม่มีข้อมูล', w: null }
+    : f.bag_lost > 0 ? { n: 'สัมภาระ', s: 'bad', r: 'Blocked', rc: 'rd', x: `Lost ${f.bag_lost}`, w: f.bag_loaded / f.bag_total }
+    : f.bag_loaded === f.bag_total ? { n: 'สัมภาระ', s: 'done', r: 'Complete', x: `${f.bag_loaded}/${f.bag_total}`, w: 1 }
+    : { n: 'สัมภาระ', s: 'prog', r: 'In progress', x: `${f.bag_loaded}/${f.bag_total}`, w: f.bag_loaded / f.bag_total });
+  T.push(st === 'Cancelled' ? { n: 'ขึ้นเครื่อง', s: 'bad', r: 'Cancelled', rc: 'rd', w: 0 }
+    : fin ? { n: 'ขึ้นเครื่อง', s: 'done', r: 'Complete', w: 1 }
+    : st === 'Boarding' ? { n: 'ขึ้นเครื่อง', s: 'prog', r: 'In progress', w: 0.5 }
+    : st === 'Delayed' ? { n: 'ขึ้นเครื่อง', s: 'warn', r: 'Delayed', rc: 'am', w: 0 }
+    : { n: 'ขึ้นเครื่อง', s: 'pend', r: 'Scheduled', w: 0 });
+  T.push(st === 'Cancelled' ? { n: 'ออกเดินทาง', s: 'bad', r: 'Cancelled', rc: 'rd', w: 0 }
+    : fin ? { n: 'ออกเดินทาง', s: 'done', r: 'Complete', x: fmtDT(f.departure_time), w: 1 }
+    : { n: 'ออกเดินทาง', s: 'pend', r: 'Scheduled', d: delay > 0 ? `+${delay} min` : '', x: fmtDT(f.departure_time), w: 0 });
+  const ws = T.map(t => t.w).filter(w => w !== null);
+  return { T, pct: ws.length ? Math.round(100 * ws.reduce((a, b) => a + b, 0) / ws.length) : 0 };
+}
+
+function flightCard(f) {
+  const { T, pct } = tasksOf(f), canceled = f.flight_status === 'Cancelled';
+  const [cls, txt] = canceled ? ['bad', 'CANCELLED'] : f.risk ? ['warn', 'AT RISK'] : ['ok', 'ON TRACK'];
+  const col = { ok: 'var(--green)', warn: 'var(--amber)', bad: 'var(--red)' }[cls];
+  return `<div class="fl">
+    <div class="fl-h"><div class="fl-no">${esc(f.flight_no)}<small>${f.gate_id != null ? 'G' + esc(f.gate_id) : '—'} / ${esc(f.terminal_name || '—')}</small></div><span class="tag ${cls}">${txt}</span></div>
+    <div class="fl-m"><span>${esc(f.origin || '—')} → ${esc(f.destination || '—')}${f.model ? ' · ' + esc(f.model) : ''}</span><span>ETD <b>${fmtDT(f.estimated_time || f.departure_time)}</b></span></div>
+    <div class="bar"><i><s style="width:${pct}%;background:${col}"></s></i><span>${pct}%</span></div>
+    ${T.map(t => `<div class="tk">${IC[t.s]}<span class="nm">${t.n}</span><span class="st"><span class="${t.rc || ''}">${t.r}</span>${t.d ? `<b class="am">${t.d}</b>` : ''}${t.x ? `<b>${esc(t.x)}</b>` : ''}</span></div>`).join('')}
+    <div class="fl-f"><span>${esc(f.airline_name || '—')} · ${f.passenger_count ?? 0} ผู้โดยสาร</span>${M.tables.flight ? '<a data-t="flight">Open flights →</a>' : ''}</div></div>`;
+}
+
+async function report() {
+  if (RS.type) return drawSummary();
+  await drawReport();
+  timer = setInterval(() => { if (CUR === 'report' && !RS.type) drawReport().catch(() => {}); }, 15000);
+}
+async function drawReport() {
+  const r = await api('report');
+  if (CUR !== 'report' || RS.type) return;
+  if (RD && ['rdate', 'rtype'].includes(document.activeElement && document.activeElement.id)) return; // กำลังเลือกวันที่/ประเภท ไม่รีเฟรชทับ
+  RD = r; RD.at = new Date(); paint();
+}
+
+const RTYPES = [['', 'รายงานภาพรวม (ค่าเริ่มต้น)'], ['ops', 'รายงานสรุปประสิทธิภาพการดำเนินงาน'], ['res', 'รายงานสรุปการใช้ทรัพยากร']];
+const rbar = () => `<label>วันเดือนปี<input type="date" id="rdate" value="${esc(RS.date)}"></label>
+  <label>ประเภทรายงาน<select id="rtype">${RTYPES.map(([v, n]) => `<option value="${v}"${RS.type === v ? ' selected' : ''}>${n}</option>`).join('')}</select></label>`;
+function bindRbar() {
+  const go = () => {
+    RS.date = $('#rdate').value; RS.type = $('#rtype').value;
+    if (RS.type && !RS.date) RS.date = todayStr();
+    clearInterval(timer); $('#main').onclick = null; $('#main').innerHTML = '<div class="empty">กำลังโหลด…</div>';
+    report().catch(x => { $('#main').innerHTML = `<div class="err">${esc(x.message)}</div>`; });
+  };
+  $('#rdate').onchange = go; $('#rtype').onchange = go;
+}
+
+// 6.1 / 6.2 รายงานสรุปตามวันเดือนปีที่เลือก
+async function drawSummary() {
+  const r = await api(`report/summary?type=${RS.type}&date=${encodeURIComponent(RS.date)}`);
+  if (CUR !== 'report' || !RS.type) return;
+  RS.date = r.date;
+  const kpi = (l, v, s, am) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s${am ? ' am' : ''}">${s}</div></div>`;
+  const n = v => Number(v).toLocaleString('en-US');
+  let title, body;
+  if (r.type === 'ops') {
+    title = 'รายงานสรุปประสิทธิภาพการดำเนินงาน';
+    body = `<div class="kpis">
+      ${kpi('พนักงานที่ทำงาน', n(r.staff), 'คนที่มีกะในวันที่เลือก')}
+      ${kpi('ผู้โดยสารทั้งหมด', n(r.pax), 'จากเที่ยวบินที่ออกในวันที่เลือก')}
+      ${kpi('สายการบิน', n(r.airlines), 'สายการบินที่มีเที่ยวบิน')}
+      ${kpi('สัมภาระทั้งหมด', n(r.bagTotal), 'ชิ้น (ของเที่ยวบินในวันที่เลือก)')}
+      ${kpi('เที่ยวบินที่ถูกยกเลิก', n(r.cancelled), r.cancelled ? 'ต้องติดตามผู้โดยสารและสัมภาระ' : 'ไม่มีเที่ยวบินยกเลิก', r.cancelled > 0)}</div>
+      <section class="panel flush"><div class="ph"><div><h3>สัมภาระแยกตามสถานะ</h3><p>จำนวนสัมภาระของเที่ยวบินในวันที่เลือก</p></div></div>
+        <div class="wrap"><table><thead><tr><th>สถานะสัมภาระ</th><th>จำนวน</th><th>สัดส่วน</th></tr></thead><tbody>
+        ${r.bag.map(x => `<tr><td>${esc(x.status)}</td><td class="mono">${n(x.n)}</td><td class="mono">${r.bagTotal ? Math.round(100 * x.n / r.bagTotal) : 0}%</td></tr>`).join('')}
+        </tbody></table></div></section>`;
+  } else {
+    title = 'รายงานสรุปการใช้ทรัพยากร';
+    const pill = x => x.damage > 0 ? ['bad', 'มีอุปกรณ์ชำรุด'] : x.maint > 0 ? ['warn', 'กำลังซ่อมแซม'] : x.total === 0 ? ['mute', 'ไม่มีอุปกรณ์'] : ['ok', 'ใช้งานได้'];
+    body = `<div class="kpis">
+      ${kpi('หลุมจอดที่ถูกใช้งาน', `${r.stands.used} / ${r.stands.total}`, 'ในวันที่เลือก')}
+      ${kpi('ประตูขึ้นเครื่องที่ถูกใช้งาน', `${r.gates.used} / ${r.gates.total}`, 'ในวันที่เลือก')}
+      ${kpi('สายพานที่ถูกใช้', `${r.belts.used} / ${r.belts.total}`, 'ในวันที่เลือก')}</div>
+      <section class="panel flush"><div class="ph"><div><h3>สรุปอุปกรณ์ภาคพื้น</h3><p>สถานะอุปกรณ์เป็นข้อมูลปัจจุบัน (ไม่นับอุปกรณ์ที่ปลดระวาง) · หลุมจอด ประตู สายพาน นับตามวันที่เลือก</p></div></div>
+        <div class="wrap">${r.equipment.length ? `<table><thead><tr><th>รหัสอุปกรณ์</th><th>ชื่ออุปกรณ์</th><th>สถานะอุปกรณ์</th><th>ใช้งานอยู่</th><th>ใช้การได้</th><th>ชำรุด</th><th>กำลังซ่อมแซม</th></tr></thead><tbody>
+        ${r.equipment.map(x => { const [c, l] = pill(x); return `<tr><td class="mono">${esc(x.id)}</td><td>${esc(x.name)}</td><td><span class="pill ${c}">${l}</span></td><td class="mono">${x.inuse}</td><td class="mono">${x.avail}</td><td class="mono">${x.damage}</td><td class="mono">${x.maint}</td></tr>`; }).join('')}
+        </tbody></table>` : '<div class="empty">ไม่มีข้อมูลอุปกรณ์</div>'}</div></section>`;
+  }
+  $('#main').innerHTML = `<div class="pghead"><div><h1 class="pt">${title}</h1><p class="sub">ข้อมูลของวันที่ ${new Date(r.date + 'T00:00:00').toLocaleDateString('th-TH', { dateStyle: 'long' })}</p></div><div class="pgact">${rbar()}</div></div>${body}`;
+  bindRbar();
+}
+
+function paint() {
+  const r = RD, k = r.kpi, now = new Date();
+  const kpi = (l, v, s, am) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s${am ? ' am' : ''}">${s}</div></div>`;
+  const pctBag = k.bagTotal ? Math.round(100 * k.bagDone / k.bagTotal) : 0;
+
+  const list = RS.risk ? r.flights.filter(f => f.risk) : r.flights, shown = list.slice(0, 3), total = RS.risk ? k.atRisk : k.active;
+  const flights = `<section class="panel"><div class="ph"><div><h3>การควบคุมเที่ยวบิน</h3><p>เรียงตามเวลาออกเดินทาง · แสดง ${shown.length} จาก ${total} เที่ยวบิน</p></div>
+    <div class="seg"><button data-f="all" class="${RS.risk ? '' : 'on'}">ทั้งหมด</button><button data-f="risk" class="${RS.risk ? 'on' : ''}">At risk ${k.atRisk}</button></div></div>
+    <div class="tr3">${shown.length ? shown.map(flightCard).join('') : '<div class="empty" style="grid-column:1/-1">ไม่มีเที่ยวบินที่ตรงเงื่อนไข</div>'}</div></section>`;
+
+  const rows = r.shifts.map(s => {
+    const a = toD(s.workday + ' ' + s.start_time), b = toD(s.workday + ' ' + s.end_time); if (b <= a) b.setDate(b.getDate() + 1);
+    const n = +s.staff_n;
+    const [c, l] = !n ? ['bad', 'ไม่มีผู้ปฏิบัติงาน'] : now >= a && now < b ? ['ok', 'กำลังปฏิบัติงาน'] : now < a ? ['info', 'รอเริ่มกะ'] : ['mute', 'จบกะแล้ว'];
+    const nm = (s.names || '').split('|').filter(Boolean), names = nm.slice(0, 2).map(esc).join(', ') + (nm.length > 2 ? ` +${nm.length - 2}` : '');
+    const day = s.workday === todayStr() ? 'วันนี้' : s.workday.slice(8, 10) + '/' + s.workday.slice(5, 7);
+    return `<tr><td><span class="mono muted">#${esc(s.shift_id)}</span> · ${esc(s.worktitle)}</td><td>${day}</td><td class="mono">${hm(s.start_time)}–${hm(s.end_time)}</td><td>${names || '<span class="muted">—</span>'}</td><td class="mono">${n}</td><td><span class="pill ${c}">${l}</span></td></tr>`;
+  }).join('');
+  const people = `<section class="panel flush"><div class="ph"><div><h3>ตารางปฏิบัติงาน</h3><p>กะวันนี้และกะที่กำลังจะถึง</p></div>${M.tables.shift_assignment ? '<a class="lnk" data-t="shift_assignment" style="font-size:13px">ตารางทั้งหมด →</a>' : ''}</div>
+    <div class="wrap">${rows ? `<table><thead><tr><th>กะ</th><th>วันที่</th><th>เวลา</th><th>ผู้ปฏิบัติงาน</th><th>คน</th><th>สถานะ</th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty">ไม่มีกะที่กำลังจะถึง</div>'}</div>
+    <div class="pf">${k.shiftsToday} กะวันนี้ · เจ้าหน้าที่ในตารางวันนี้ ${k.staffToday} จาก ${k.staffTotal} คน</div></section>`;
+
+  const dm = r.equipment.damaged, d0 = dm[0];
+  const equip = `<section class="panel"><div class="ph"><div><h3>อุปกรณ์ภาคพื้น</h3><p>${d0 ? 'อุปกรณ์ชำรุดที่ต้องดำเนินการ' : 'สถานะอุปกรณ์ปกติ'}</p></div>${k.unitsDamage ? `<span class="tag warn">${k.unitsDamage} BLOCKED</span>` : ''}</div>
+    ${d0 ? `<div class="xbad">${TRUCK}<div><b>${esc(d0.unit_id)} · ${esc(d0.equipment_name || 'อุปกรณ์')} ชำรุด</b><small>สถานะ Damage${k.unitsDamage > 1 ? ` · และอีก ${k.unitsDamage - 1} ชิ้น` : ''}</small></div></div>
+      <div class="xrow"><div><b>${d0.reserve ? esc(d0.reserve) + ' · อุปกรณ์สำรอง' : 'ไม่มีอุปกรณ์สำรอง'}</b><small>${d0.reserve ? esc(d0.equipment_name || '') + ' · พร้อมใช้งาน' : 'ไม่มีชิ้นว่างของประเภทเดียวกัน'}</small></div><span class="tag ${d0.reserve ? 'ok' : 'bad'}">${d0.reserve ? 'READY' : 'NONE'}</span></div>
+      <p class="xnote">ต้องจัดอุปกรณ์สำรองหรือส่งซ่อมก่อนใช้งานครั้งถัดไป</p>`
+      : '<div class="xbad good"><div><b>ไม่มีอุปกรณ์ชำรุด</b><small>ทุกชิ้นพร้อมใช้งานหรืออยู่ระหว่างใช้งาน</small></div></div>'}
+    <div class="xcnt">${[0, 1, 2].map(i => { const x = r.equipment.ready[i]; return x ? `<div><small>${esc(x.name)}</small><b>${x.n} ready</b></div>` : '<div></div>'; }).join('')}</div></section>`;
+
+  $('#main').innerHTML = `<div class="pghead"><div><h1 class="pt">รายงานภาพรวม</h1><p class="sub">ติดตามเที่ยวบิน กะปฏิบัติงาน และอุปกรณ์ภาคพื้นในที่เดียว</p></div>
+      <div class="pgact">${rbar()}${M.tables.shift_assignment ? '<button class="btn ghost" data-t="shift_assignment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.2 2.7-5 6-5s6 1.8 6 5M16 5.5a3 3 0 0 1 0 5.6M18 14.5c1.7.7 3 2 3 4.5"/></svg>ตารางปฏิบัติงาน</button>' : ''}
+        ${M.tables.alerts ? '<button class="btn" data-t="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>ประกาศแจ้งเตือน</button>' : ''}</div></div>
+    <div class="kpis">
+      ${kpi('เที่ยวบินที่กำลังดำเนินการ', k.active, `${k.active - k.atRisk} on track · ${k.atRisk} at risk`, k.atRisk > 0)}
+      ${kpi('สัมภาระส่งมอบแล้ว', `${k.bagDone} / ${k.bagTotal}`, `${pctBag}% ของทั้งหมด · สูญหาย ${k.bagLost}`, k.bagLost > 0)}
+      ${kpi('เจ้าหน้าที่ในตารางวันนี้', `${k.staffToday} / ${k.staffTotal}`, `${k.shiftsToday} กะวันนี้ · ${k.staffTotal - k.staffToday} คนไม่มีกะ`)}
+      ${kpi('อุปกรณ์ที่ใช้งานอยู่', `${k.unitsInUse} / ${k.unitsTotal}`, `${k.unitsAvail} available · ${k.unitsMaint} maintenance · ${k.unitsDamage} damage`, k.unitsDamage > 0)}
+    </div>
+    ${flights}
+    <div class="two">${people}${equip}</div>
+    <div class="foot"><span>Synced ${pad(RD.at.getHours())}:${pad(RD.at.getMinutes())}:${pad(RD.at.getSeconds())} ${TZ} · ข้อมูลอัปเดตอัตโนมัติทุก 15 วินาที</span><span>All times ${TZ}</span></div>`;
+
+  bindRbar();
+  $('#main').onclick = e => {
+    const fb = e.target.closest('[data-f]');
+    if (fb) { RS.risk = fb.dataset.f === 'risk'; return paint(); }
+    const a = e.target.closest('[data-t]'); if (a) show(a.dataset.t);
+  };
+}
+
+if (tok) start();
+</script>
+</body>
+</html>
